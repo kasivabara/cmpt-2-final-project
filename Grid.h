@@ -1,18 +1,3 @@
-/*
-Your program should begin by prompting the user for a file name 
-and using that file's contents to set the initial state of your Grid object. 
-Then, it should ask if the simulation should wrap around the Grid (read Wrap 
-Version section for the details of wrapping). Then the user can type f to go 
-forward the bacteria growth by one generation; or s to begin an 
-animation-style simulation that go forward the simulation by multiple 
-generations, the animation will go forward every 100 milliseconds; or q to 
-quit. Your menu should be case-insensitive and will only get the first 
-character; for example, an uppercase or lowercase S, F, or Q should work; 
-and a word like "for", "qui" or "Simulate" should work as well
-*/
-
-// You do not need to write any code to handle a mis-formatted file.
-// You may also assume that the input file name typed by the user does not contain any spaces.
 
 using namespace std;
 

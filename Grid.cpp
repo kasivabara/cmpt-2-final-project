@@ -286,5 +286,3 @@ istream& operator>>(istream& in, Grid& g)
     g = Grid(temp);
     return in;
 };
-
-//hui
