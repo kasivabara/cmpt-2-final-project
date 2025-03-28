@@ -23,23 +23,19 @@ int GridRow::getLength()
 
 bool& GridRow::operator[](const int index)
 {
-    
     if (index < 0 || index >= numC) 
     {
-        throw std::out_of_range("Column out of range");
+        throw std::out_of_range ("Row out of range");
     }
-    
     return row[index];
 }
 
 const bool& GridRow::operator[](const int index) const
 {
-    
     if (index < 0 || index >= numC) 
     {
-        throw std::out_of_range("Column out of range");
+        throw std::out_of_range ("Row out of range");
     }
-    
     return row[index];
 };
 
@@ -50,7 +46,7 @@ GridRow& GridRow::operator=(GridRow && gr)
     return (*this);
 };
 
-GridRow& GridRow::operator=(const GridRow & gr)
+GridRow& GridRow::operator=(const GridRow &gr)
 {
     numC = gr.numC;
     row = new bool[numC];
@@ -74,12 +70,16 @@ SIZE -> size of the array
 */
 bool calculateState(bool initial, bool* arr, const int SIZE)
 {
-    int c = 0;
-    for (int i=0; i!=SIZE; i++) ++c;
-    if (c <= 1) {return false;}
-    if (c == 2) {return initial;}
-    if (c == 3) {return true;}
-    if (c >= 4) {return false;}
+    int liveCount = 0;
+    for (int i = 0; i != SIZE; i++)
+    {
+        if (arr[i]) liveCount++;
+    }
+
+    if (liveCount <= 1) { return false; }
+    if (liveCount == 2) { return initial; }
+    if (liveCount == 3) { return true; }
+    return false;
 }
 
 const int& Grid::getRows() const
@@ -102,6 +102,16 @@ void Grid::set_isWrap(bool state)
     isWrap = state;
 };
 
+const string& Grid::get_name() const
+{
+    return name;
+}
+
+void Grid::set_name(const string& str)
+{
+    name = str;
+}
+
 Grid::Grid(): numRows(0), numCols(0), isWrap(false){};
 
 Grid::Grid(int r, int c): numRows(r), numCols(c), isWrap(false)
@@ -116,6 +126,7 @@ Grid::Grid(int r, int c): numRows(r), numCols(c), isWrap(false)
 
 Grid::Grid(const Grid &g): numRows(g.numRows), numCols(g.numCols), isWrap(g.isWrap)
 {
+    name = g.name;
     plane = new GridRow[numRows];
     for (int row=0; row!=numRows; row++)
     {
@@ -128,6 +139,7 @@ Grid::Grid(const Grid &g): numRows(g.numRows), numCols(g.numCols), isWrap(g.isWr
 
 Grid::Grid(Grid && g): numRows(g.numRows), numCols(g.numCols), isWrap(g.isWrap)
 {
+    name = g.name;
     plane = g.plane;
     g.plane = nullptr;
 }
@@ -138,23 +150,31 @@ Grid::Grid(const string& str)
     string temp;
     fstream dataFile;
 
-    dataFile.open("info.txt", ios::in);
+    dataFile.open(str, ios::in);
     dataFile >> numRows;
     dataFile >> numCols;
     plane = new GridRow[numRows];
 
     int row = 0;
+    GridRow tempRow(numCols);
+
     while (dataFile >> temp)
     {
+        if ((temp.size() == 0) || (temp.find('#') != -1)){break;}
+        
         for (int col=0; col != numCols; col++)
         {
-            if (temp.at(col) == 'x')
-                {(*this)[row][col] = true;}
+            if (temp.at(col) == 'X')
+                {tempRow[col] = true;}
 
             else
-                {(*this)[row][col] = false;}
+                {tempRow[col] = false;}
+            
         }
+        plane[row] = tempRow;
+        row++;
     }
+    name = str;
 }
 
 Grid& Grid::operator=(const Grid &g)
@@ -162,16 +182,25 @@ Grid& Grid::operator=(const Grid &g)
     numRows = g.numRows;
     numCols = g.numCols;
     isWrap = g.isWrap;
-    plane = g.plane;
+    name = g.name;
+    for (int row=0; row!=numRows; row++)
+    {
+        for (int col=0; col!=numCols; col++)
+        {
+            plane[row][col] = g.plane[row][col];
+        }
+    }
     return (*this);
 };
 
 Grid& Grid::operator=(Grid && g)
 {
-    std::swap(numRows, g.numRows);
-    std::swap(numCols, g.numCols);
-    std::swap(isWrap, g.isWrap);
-    std::swap(plane, g.plane);
+    numRows = g.numRows;
+    numCols = g.numCols;
+    isWrap = g.isWrap;
+    plane = g.plane;
+    g.plane = nullptr;
+    name = g.name;
     return (*this);
 };
 
@@ -182,7 +211,7 @@ Grid::~Grid()
 
 GridRow& Grid::operator[](int r)
 {
-    if (r < 0 || r >= numCols) 
+    if (r < 0 || r >= numRows) 
     {
         throw std::out_of_range ("Row out of range");
     }
@@ -191,18 +220,18 @@ GridRow& Grid::operator[](int r)
 
 const GridRow& Grid::operator[](int r) const
 {
-    if (r < 0 || r >= numCols) 
+    if (r < 0 || r >= numRows) 
     {
         throw std::out_of_range ("Row out of range");
     }
     return plane[r];
 }
 
-// TO DO
+//garbage code territory
 Grid& Grid::operator++()
 {
-    int size = 0;
-    bool* array;
+    int size;
+    bool* array = new bool[numCols];
     Grid nextGeneration(numRows, numCols);
 
     if (isWrap == false)
@@ -212,29 +241,109 @@ Grid& Grid::operator++()
         {
             for (int col=0; col!=numCols; col++)
             {
-                delete[] array;
                 size = 0;
 
-
                 if ((row == 0) && (col == 0))
-                {
-                    size = 3;
-                    array = new bool[size];
-                    array[0] = (*this)[row][col+1];
-                    array[1] = (*this)[row+1][col];
-                    array[2] = (*this)[row+1][col+1];
-                    nextGeneration[row][col] = calculateState((*this)[row][col], array, size);
-                }
+                    {
+                        size = 3;
+                        array[0] = (*this)[row][col+1];
+                        array[1] = (*this)[row+1][col];
+                        array[2] = (*this)[row+1][col+1];
+                        nextGeneration[row][col] = calculateState((*this)[row][col], array, size);
+                        continue;
+                    }
 
                 if ((row == 0) && (col == numCols-1))
-                {
-                    size = 3;
-                    array = new bool[size];
-                    array[0] = (*this)[row][numCols-2];
-                    array[1] = (*this)[row+1][numCols-1];
-                    array[2] = (*this)[row+1][numCols-2];
+                    {
+                        size = 3;
+                        array[0] = (*this)[row][col-1];
+                        array[1] = (*this)[row+1][col];
+                        array[2] = (*this)[row+1][col-1];
+                        nextGeneration[row][col] = calculateState((*this)[row][col], array, size);
+                        continue;
+                    }
+                
+                if ((row == numRows-1) && (col == 0))
+                    {
+                        size = 3;
+                        array[0] = (*this)[row][col+1];
+                        array[1] = (*this)[row-1][col];
+                        array[2] = (*this)[row-1][col+1];
+                        nextGeneration[row][col] = calculateState((*this)[row][col], array, size);
+                        continue;
+                    }
+
+                if ((row == numRows-1) && (col == numCols-1))
+                    {
+                        size = 3;
+                        array[0] = (*this)[row][col-1];
+                        array[1] = (*this)[row-1][col];
+                        array[2] = (*this)[row-1][col-1];
+                        nextGeneration[row][col] = calculateState((*this)[row][col], array, size);
+                        continue;
+                    }
+
+                if (row == 0)
+                    {
+                        size = 5;
+                        array[0] = (*this)[row][col-1];
+                        array[1] = (*this)[row][col+1];
+                        array[2] = (*this)[row+1][col-1];
+                        array[3] = (*this)[row+1][col];
+                        array[4] = (*this)[row+1][col+1];
+                        nextGeneration[row][col] = calculateState((*this)[row][col], array, size);
+                        continue;
+                    }
+
+                if (row == numRows-1)
+                    {
+                        size = 5;
+                        array[0] = (*this)[row][col-1];
+                        array[1] = (*this)[row][col+1];
+                        array[2] = (*this)[row-1][col-1];
+                        array[3] = (*this)[row-1][col];
+                        array[4] = (*this)[row-1][col+1];
+                        nextGeneration[row][col] = calculateState((*this)[row][col], array, size);
+                        continue;
+                    }
+
+                if (col == 0)
+                    {
+                        size = 5;
+                        array[0] = (*this)[row-1][col];
+                        array[1] = (*this)[row+1][col];
+                        array[2] = (*this)[row-1][col+1];
+                        array[3] = (*this)[row][col+1];
+                        array[4] = (*this)[row+1][col+1];
+                        nextGeneration[row][col] = calculateState((*this)[row][col], array, size);
+                        continue;
+                    }
+                
+                if (col == numCols-1)
+                    {
+                        size = 5;
+                        array[0] = (*this)[row-1][col];
+                        array[1] = (*this)[row+1][col];
+                        array[2] = (*this)[row-1][col-1];
+                        array[3] = (*this)[row][col-1];
+                        array[4] = (*this)[row+1][col-1];
+                        nextGeneration[row][col] = calculateState((*this)[row][col], array, size);
+                        continue;
+                    }
+
+                
+                //else
+                    size = 8;
+                    array[0] = (*this)[row-1][col-1];
+                    array[1] = (*this)[row-1][col];
+                    array[2] = (*this)[row-1][col+1];
+                    array[3] = (*this)[row][col-1];
+                    array[4] = (*this)[row][col+1];
+                    array[5] = (*this)[row+1][col-1];
+                    array[6] = (*this)[row+1][col];
+                    array[7] = (*this)[row+1][col+1];
                     nextGeneration[row][col] = calculateState((*this)[row][col], array, size);
-                }
+                    continue;
 
             }
         }
@@ -242,28 +351,36 @@ Grid& Grid::operator++()
 
     else 
     {
-
+        //pass
+        nextGeneration = *this;
     }
+
+
+    (*this) = nextGeneration;
+
+    delete[] array;
     return *this;
 }
 
 ostream& operator<<(ostream& out, const Grid& g)
 {
-    out << "\n\n\n\n\n\n";
+    out << "\n";
     for (int row=0; row != g.numRows; row++)
     {
+        out << "\n";
         for (int col=0; col != g.numCols; col++)
         {
             if (g[row][col] == true)
                 {
-                    out << 'x';
+                    out << static_cast<char>(178);
                 }
             else
                 {
-                    out << '-';
+                    out << "  ";
                 }
         }
     }
+
     out << std::endl;
     return out;
 };
@@ -272,17 +389,17 @@ istream& operator>>(istream& in, Grid& g)
 {
     fstream fileTemp;
     string temp;
-    cout << "Enter file's name: ";
+    cout << "Grid input file name? ";
     in >> temp;
     fileTemp.open(temp, ios::in);
     while (fileTemp.fail())
     {
         cout << "There is an error with opening the file.\nEnter the name again: ";
-        temp.clear();
         in >> temp;
         fileTemp.open(temp, ios::in);
     }
     fileTemp.close();
     g = Grid(temp);
+    g.set_name(temp);
     return in;
 };

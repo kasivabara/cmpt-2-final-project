@@ -1,5 +1,7 @@
 #include <iostream>
 #include <fstream>
+#include <thread>
+#include <chrono>
 #include "Grid.h"
 using namespace std;
 
@@ -17,8 +19,11 @@ void simulate(Grid& g)
     
     for (int frame=0; frame != frames; frame++)
     {
-        system("cls");
         ++g;
+        system("cls");
+        cout << g;
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        
     }
 }
 
@@ -27,14 +32,13 @@ void forward(Grid& g)
     ++g;
 }
 
-int getChoice()
+char getChoice()
 {
     string temp;
     while (true)
     {
-        temp.clear();
         cout << "s)imulate, f)orward, q)uit? ";
-        getline(cin, temp);
+        cin >> temp;
         if (temp.at(0) == 's'){return 's';}
         if (temp.at(0) == 'f'){return 'f';}
         if (temp.at(0) == 'q'){return 'q';}
@@ -47,47 +51,41 @@ int main()
     fstream test;
     string temp;
     Grid mainGrid;
-    cout << "Grid input file name? ";
-    cin >> temp;
-    test.open(temp, ios::in);
-    while(test.fail())
-    {
-        cout << "The file does not exist, enter again.\n";
-        cout << "Grid input file name? ";
-        cin >> temp;
-        test.open(temp, ios::in);
-    }
 
+    cin >> mainGrid;
+    test.open(mainGrid.get_name(), ios::in);
 
-    cout << std::endl;
-    int tempRows, tempCols;
+    int tempRows = 0, tempCols = 0;
     test >> tempRows; test >> tempCols;
-    cout << "row: " << tempRows << ", col: " << tempCols;
+    cout << "row: " << tempRows << ", col: " << tempCols << endl;
     while (test >> temp)
     {
+        if (temp.find('#') != -1){break;}
         cout << temp << "\n";
     }
 
     cout << "Should the simulation wrap around the grid (y/n)? ";
-    cin >> temp;
-    if (temp.at(0) == 'n') {mainGrid.set_isWrap(false);}
+    cin >> choice;
+    if (choice == 'n') {mainGrid.set_isWrap(false);}
     else {mainGrid.set_isWrap(true);}
 
-    
+    choice = 'x';
     while (choice != 'q')
     {
+        choice = getChoice();  // Get user input FIRST
+
         if (choice == 's')
         {
             simulate(mainGrid);
-            continue;
         }
-
-        if (choice == 'f')
+        else if (choice == 'f')
         {
             forward(mainGrid);
-            continue;
         }
-        choice = getChoice();
+
+        // Print the grid after processing the choice
+        system("cls");  // Optional: clear screen for better visibility
+        cout << mainGrid;
     }
 
     return 0;

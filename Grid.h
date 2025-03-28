@@ -25,15 +25,20 @@ class Grid
         int numRows, numCols;
         bool isWrap = false;
         GridRow* plane;
+        string name;
 
     public:
         // Getter of column and row of grid
         const int& getRows() const;
         const int& getCols() const;
 
-        //Getter and setter of isWrap;
+        //Getter and setters of isWrap;
         const bool& get_isWrap() const;
         void set_isWrap(bool);
+
+        //getter and setters for names
+        const string& get_name() const;
+        void set_name(const string&);
 
         //default constructor
         Grid();
@@ -72,6 +77,6 @@ class Grid
         friend ostream& operator<<(ostream&, const Grid&);
 
         // operator>>
-        friend istream& operator>>(istream&, const Grid&);
+        friend istream& operator>>(istream&, Grid&);
         
 };
